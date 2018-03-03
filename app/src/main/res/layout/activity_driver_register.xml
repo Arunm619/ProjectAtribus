@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.atribus.projectbus.Driver.DriverRegister">
+
+    <LinearLayout
+        android:id="@+id/ll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="2dp">
+
+
+        <!--NAME-->
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:id="@+id/et_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/full_name"
+            app:met_floatingLabel="highlight"
+            app:met_iconLeft="@drawable/ic_bus"
+            app:met_iconPadding="0dp"
+            app:met_maxCharacters="25" />
+
+        <!--Mobile number-->
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:id="@+id/et_mobilenumber"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/mobile_number"
+            android:inputType="number"
+            app:met_floatingLabel="highlight"
+            app:met_iconLeft="@drawable/ic_bus"
+            app:met_iconPadding="0dp"
+
+            />
+
+
+        <!-- Bus Route -->
+        <com.rengwuxian.materialedittext.MaterialAutoCompleteTextView
+            android:id="@+id/et_busroute"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:hint="@string/bus"
+            app:met_floatingLabel="highlight"
+            app:met_iconLeft="@drawable/ic_bus"
+            app:met_iconPadding="0dp" />
+
+        <!--Bus License Number -->
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:id="@+id/et_license"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:hint="@string/license"
+            android:visibility="visible"
+            app:met_floatingLabel="highlight"
+            app:met_iconLeft="@drawable/ic_bus"
+            app:met_iconPadding="0dp"
+            app:met_maxCharacters="100" />
+        <!--Date of Birth-->
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:id="@+id/et_dob"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:hint="@string/date_of_birth"
+            app:met_floatingLabel="normal"
+            app:met_iconLeft="@drawable/ic_bus"
+            app:met_iconPadding="0dp" />
+
+        <Button
+            android:id="@+id/btn_register"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:text="@string/register" />
+
+    </LinearLayout>
+
+</ScrollView>

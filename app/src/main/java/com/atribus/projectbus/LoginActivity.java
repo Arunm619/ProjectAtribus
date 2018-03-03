@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
 
+import com.atribus.projectbus.Driver.DriverHomeActivity;
 import com.atribus.projectbus.User.UserHomeActivity;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -61,7 +62,10 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
                 if (firebaseAuth.getCurrentUser() != null) {
-                    startActivity(new Intent(LoginActivity.this, UserHomeActivity.class));
+                    //change here
+                    // UserHomeActivity
+                    // DriverHomeActivity
+                    startActivity(new Intent(LoginActivity.this, DriverHomeActivity.class));
                     finish();
                 }
             }

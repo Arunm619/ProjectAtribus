@@ -17,4 +17,9 @@
     <string name="starting_at">Starting At</string>
     <string name="_8_00_am">8.00 AM</string>
     <string name="title_activity_tracking">Map</string>
+    <string name="routeNumber">Route #</string>
+    <string name="start_trip">Start Trip</string>
+    <string name="license">License</string>
+    <string name="chooseLicense">Choose License</string>
+    <string name="title_activity_bus_live_location_tracker">Map</string>
 </resources>

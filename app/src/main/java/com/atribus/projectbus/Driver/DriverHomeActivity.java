@@ -1,36 +1,32 @@
-package com.atribus.projectbus.User;
+package com.atribus.projectbus.Driver;
 
 import android.Manifest;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.atribus.projectbus.LocateBus;
 import com.atribus.projectbus.Model.BusRoutes;
+import com.atribus.projectbus.Model.Driver;
 import com.atribus.projectbus.Model.User;
 import com.atribus.projectbus.R;
-import com.atribus.projectbus.Tracking;
+import com.atribus.projectbus.User.UserHomeActivity;
+import com.atribus.projectbus.User.UserRegister;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
@@ -50,14 +46,14 @@ import com.gun0912.tedpermission.TedPermission;
 
 import java.util.ArrayList;
 
-public class UserHomeActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+import static com.atribus.projectbus.User.UserHomeActivity.isLocationEnabled;
 
-
+public class DriverHomeActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks {
     String MY_PREFS_NAME = "Mydatabase";
     SharedPreferences prefs;
-
-    Button btn_locate, btn_boarded;
     TextView tv_starttime, tvroutenumber;
+    Button btn_starttrip;
+
     BusRoutes busdb;
 
     static final int errordialogreq = 101;
@@ -69,56 +65,45 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_user_home);
+        setContentView(R.layout.activity_driver_home);
         if (getSupportActionBar() != null)
             getSupportActionBar().setTitle("Home");
         prefs = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE);
 
         Gson gson = new Gson();
-        String json = prefs.getString("UserObj", "");
+        String json = prefs.getString("DriverObj", "");
+
 
         User obj = gson.fromJson(json, User.class);
         if (obj == null) {
-            startActivity(new Intent(this, UserRegister.class));
+            startActivity(new Intent(this, DriverRegister.class));
 
             finish();
         }
-
+        setupviews();
         busdb = new BusRoutes();
 
-        setupviews();
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-        if (obj != null)
+        if (obj != null) {
             tv_starttime.setText(busdb.startingtimes.get(obj.getBusroute()));
 
-        tvroutenumber.setText(getString((R.string.routeNumber)) + obj.getBusroute());
-        btn_locate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent i = new Intent(UserHomeActivity.this, Tracking.class);
-                startActivity(i);
-            }
-        });
-        btn_boarded.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
-
-        if (isServicesOkay()) {
-            // Toast.makeText(this, "Cool", Toast.LENGTH_SHORT).show();
-            btn_locate.setEnabled(true);
-
+            tvroutenumber.setText(getString((R.string.routeNumber)) + obj.getBusroute());
         }
+        btn_starttrip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(DriverHomeActivity.this, BusLiveLocationTracker.class));
+
+            }
+        });
+
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         PermissionListener permissionlistener = new PermissionListener() {
 
             @Override
             public void onPermissionGranted() {
                 //  Toast.makeText(SignUp.this, "Permission Granted", Toast.LENGTH_SHORT).show();
-                boolean a = isLocationEnabled(UserHomeActivity.this);
+                boolean a = isLocationEnabled(DriverHomeActivity.this);
 
                 //  Toast.makeText(SignUp.this, "Locaiton enabled? "+a , Toast.LENGTH_SHORT).show();
                 if (!a) {
@@ -144,10 +129,43 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
                 .check();
 
 
-        getdevicelocation();
+        // getdevicelocation();
     }
-    // Toast.makeText(this, "welcome " + obj.getName(), Toast.LENGTH_SHORT).show();
 
+    private void setupviews() {
+
+        tvroutenumber = findViewById(R.id.tvroutenumber);
+        tv_starttime = findViewById(R.id.tv_starttime);
+        btn_starttrip = findViewById(R.id.btn_starttrip);
+
+    }
+
+    public void getdevicelocation() {
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        Task location = fusedLocationProviderClient.getLastLocation();
+        location.addOnCompleteListener(new OnCompleteListener() {
+            @Override
+            public void onComplete(@NonNull Task task) {
+                if (task.isSuccessful()) {
+                    Location currentloc = (Location) task.getResult();
+                    //   Toast.makeText(UserHomeActivity.this, "LAN : "+currentloc.getLongitude()+"\n LON "+currentloc.getLongitude(), Toast.LENGTH_SHORT).show();
+                } else {
+                    // Toast.makeText(UserHomeActivity.this, "Cannot find location", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+    }
 
     public static boolean isLocationEnabled(Context context) {
         int locationMode;
@@ -176,7 +194,7 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
         GoogleApiClient googleApiClient = null;
         googleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API).addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(UserHomeActivity.this).build();
+                .addOnConnectionFailedListener(DriverHomeActivity.this).build();
         googleApiClient.connect();
         LocationRequest locationRequest = LocationRequest.create();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -193,7 +211,7 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
                 .checkLocationSettings(googleApiClient, builder.build());
         result.setResultCallback(new ResultCallback <LocationSettingsResult>() {
             @Override
-            public void onResult(LocationSettingsResult result) {
+            public void onResult(@NonNull LocationSettingsResult result) {
                 final Status status = result.getStatus();
                 final LocationSettingsStates state = result
                         .getLocationSettingsStates();
@@ -211,7 +229,7 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
                             // Show the dialog by calling
                             // startResolutionForResult(),
                             // and check the result in onActivityResult().
-                            status.startResolutionForResult(UserHomeActivity.this, 1000);
+                            status.startResolutionForResult(DriverHomeActivity.this, 1000);
                         } catch (IntentSender.SendIntentException e) {
                             // Ignore the error.
                         }
@@ -226,75 +244,18 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
         });
     }
 
-
-    private void setupviews() {
-        tvroutenumber = findViewById(R.id.tvroutenumber);
-        tv_starttime = findViewById(R.id.tv_starttime);
-        btn_boarded = findViewById(R.id.btn_boarded);
-        btn_locate = findViewById(R.id.btn_locate);
-        btn_locate.setEnabled(false);
-
-    }
-
-
-    public boolean isServicesOkay() {
-        int availablity = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(UserHomeActivity.this);
-        if (availablity == ConnectionResult.SUCCESS) {
-            return true;
-        } else if (GoogleApiAvailability.getInstance().isUserResolvableError(availablity))
-
-        {
-            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(UserHomeActivity.this, availablity, errordialogreq);
-            dialog.show();
-        } else {
-            Toast.makeText(this, "You cant make map requests", Toast.LENGTH_SHORT).show();
-        }
-
-        return false;
-    }
-
     @Override
-    public void onConnected(Bundle arg0) {
-        // TODO Auto-generated method stub
+    public void onConnected(@Nullable Bundle bundle) {
 
     }
 
     @Override
-    public void onConnectionSuspended(int arg0) {
-        // TODO Auto-generated method stub
+    public void onConnectionSuspended(int i) {
 
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult arg0) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void getdevicelocation() {
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        Task location = fusedLocationProviderClient.getLastLocation();
-        location.addOnCompleteListener(new OnCompleteListener() {
-            @Override
-            public void onComplete(@NonNull Task task) {
-                if (task.isSuccessful()) {
-                    Location currentloc = (Location) task.getResult();
-                    //   Toast.makeText(UserHomeActivity.this, "LAN : "+currentloc.getLongitude()+"\n LON "+currentloc.getLongitude(), Toast.LENGTH_SHORT).show();
-                } else {
-                    // Toast.makeText(UserHomeActivity.this, "Cannot find location", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
 }

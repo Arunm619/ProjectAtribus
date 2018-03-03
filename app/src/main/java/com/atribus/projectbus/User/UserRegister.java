@@ -68,7 +68,7 @@ public class UserRegister extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_register);
         if (getSupportActionBar() != null)
-            getSupportActionBar().setTitle("Register");
+            getSupportActionBar().setTitle(" User Register ");
 
 
         busdb = new BusRoutes();
