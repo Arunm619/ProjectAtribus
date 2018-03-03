@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">ProjectBus</string>
+    <string name="full_name">Name</string>
+    <string name="mobile_number">Mobile Number</string>
+    <string name="date_of_birth">Date Of Birth</string>
+    <string name="Gender">Gender</string>
+    <string name="bus">Bus Route</string>
+    <string name="area">Area</string>
+    <string name="pickuppoint">Pick Up Point</string>
+    <string name="register">Register</string>
+    <string name="choosegender">Choose Gender</string>
+    <string name="chooseArea">Choose Area</string>
+    <string name="choosepickup">Choose PickUp Point</string>
+</resources>
