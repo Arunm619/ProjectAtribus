@@ -15,6 +15,7 @@ public class BusRoutes {
     public HashMap <String, Vector <Pair <String, String>>> busroute;
     public HashMap <String, String> Areasroutes;
     public HashMap <String, String> Numberroutes;
+    public HashMap <String, String> startingtimes;
 
 
     public BusRoutes() {
@@ -22,6 +23,8 @@ public class BusRoutes {
         busroute = new HashMap <>();
         Areasroutes = new HashMap <>();
         Numberroutes = new HashMap <>();
+        startingtimes = new HashMap <>();
+
         Numberroutes.put("Avadi", "11");
         Numberroutes.put("Tambram", "12");
         Numberroutes.put("Koyilambakam", "13");
@@ -43,6 +46,7 @@ public class BusRoutes {
         Areasroutes.put("13", "Avadi");
 
 
+        startingtimes.put("11", "6.00 am");
 
 
     }

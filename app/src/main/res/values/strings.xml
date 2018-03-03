@@ -11,4 +11,10 @@
     <string name="choosegender">Choose Gender</string>
     <string name="chooseArea">Choose Area</string>
     <string name="choosepickup">Choose PickUp Point</string>
+    <string name="YourBus">Your Bus</string>
+    <string name="bus_image">busimage</string>
+    <string name="route_11">Route #11</string>
+    <string name="starting_at">Starting At</string>
+    <string name="_8_00_am">8.00 AM</string>
+    <string name="title_activity_tracking">Map</string>
 </resources>
