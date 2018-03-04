@@ -67,7 +67,7 @@ public class DriverHomeActivity extends AppCompatActivity implements GoogleApiCl
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_driver_home);
         if (getSupportActionBar() != null)
-            getSupportActionBar().setTitle("Home");
+            getSupportActionBar().setTitle("Driver Home");
         prefs = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE);
 
         Gson gson = new Gson();

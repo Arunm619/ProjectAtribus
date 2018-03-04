@@ -22,4 +22,5 @@
     <string name="license">License</string>
     <string name="chooseLicense">Choose License</string>
     <string name="title_activity_bus_live_location_tracker">Map</string>
+    <string name="locationpermstitle">Location Permission Needed</string>
 </resources>

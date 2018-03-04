@@ -8,9 +8,7 @@ import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -18,17 +16,14 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.atribus.projectbus.LocateBus;
 import com.atribus.projectbus.Model.BusRoutes;
 import com.atribus.projectbus.Model.User;
 import com.atribus.projectbus.R;
-import com.atribus.projectbus.Tracking;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -71,7 +66,7 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_home);
         if (getSupportActionBar() != null)
-            getSupportActionBar().setTitle("Home");
+            getSupportActionBar().setTitle("User Home");
         prefs = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE);
 
         Gson gson = new Gson();
@@ -89,10 +84,12 @@ public class UserHomeActivity extends AppCompatActivity implements GoogleApiClie
         setupviews();
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        if (obj != null)
+        if (obj != null) {
             tv_starttime.setText(busdb.startingtimes.get(obj.getBusroute()));
 
-        tvroutenumber.setText(getString((R.string.routeNumber)) + obj.getBusroute());
+            tvroutenumber.setText(getString((R.string.routeNumber)) + obj.getBusroute());
+        }
+
         btn_locate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

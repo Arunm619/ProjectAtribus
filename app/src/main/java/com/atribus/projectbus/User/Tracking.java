@@ -1,9 +1,12 @@
-package com.atribus.projectbus.Driver;
+package com.atribus.projectbus.User;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,13 +17,15 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.atribus.projectbus.Model.Driver;
+import com.atribus.projectbus.Model.User;
 import com.atribus.projectbus.R;
-import com.directions.route.Route;
-import com.directions.route.RouteException;
-import com.directions.route.Routing;
-import com.directions.route.RoutingListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -28,7 +33,6 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -37,19 +41,15 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class BusLiveLocationTracker extends FragmentActivity implements RoutingListener, OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-
-
+public class Tracking extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     GoogleMap mGoogleMap;
     SupportMapFragment mapFrag;
     LocationRequest mLocationRequest;
@@ -57,22 +57,13 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
     FirebaseDatabase database;
-    DatabaseReference driversNode;
+    DatabaseReference driversNode, usersNode;
     FirebaseUser currentUser;
-
-    ArrayList <LatLng> markerPoints;
-    LatLng destination;
-    private List <Polyline> polylines;
-    private static final int[] COLORS = new int[]{R.color.colorPrimary, R.color.colorPrimary, R.color.colorPrimaryDark, R.color.colorAccent, R.color.primary_dark_material_light};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_bus_live_location_tracker);
-
-        // Initializing array List
-        markerPoints = new ArrayList <LatLng>();
-        destination = new LatLng(12.8699, 80.2184);
+        setContentView(R.layout.activity_tracking);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -81,14 +72,45 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
 
         database = FirebaseDatabase.getInstance();
         driversNode = database.getReference("Drivers");
+        usersNode = database.getReference("Users");
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-/*
 
         driversNode.addValueEventListener(new ValueEventListener() {
+            @SuppressLint("MissingPermission")
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 mGoogleMap.clear();
+                mGoogleMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+
+                    @Override
+                    public View getInfoWindow(Marker arg0) {
+                        return null;
+                    }
+
+                    @Override
+                    public View getInfoContents(Marker marker) {
+
+                        LinearLayout info = new LinearLayout(Tracking.this);
+                        info.setOrientation(LinearLayout.VERTICAL);
+
+                        TextView title = new TextView(Tracking.this);
+                        title.setTextColor(Color.BLACK);
+                        title.setGravity(Gravity.CENTER);
+                        title.setTypeface(null, Typeface.BOLD);
+                        title.setText(marker.getTitle());
+
+                        TextView snippet = new TextView(Tracking.this);
+                        snippet.setTextColor(Color.GRAY);
+                        snippet.setText(marker.getSnippet());
+
+                        info.addView(title);
+                        info.addView(snippet);
+
+                        return info;
+                    }
+                });
+                mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
 
                 for (DataSnapshot a : dataSnapshot.getChildren()) {
                     //markerList.clear();
@@ -97,14 +119,18 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
                         LatLng latLng = new LatLng(d.getLatitude(), d.getLongitude());
                         MarkerOptions markerOptions = new MarkerOptions();
                         markerOptions.position(latLng);
-                        markerOptions.title(d.getName());
-                        markerOptions.describeContents();
+                        markerOptions.title("Route#" + d.getBusroute());
+
+
+                        markerOptions.snippet("\n" + "Bus License:" + d.getLicense() + "\n" + "Driver Name:" + d.getName());
+
                         markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_white));
                         mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
                     }
 
 
                 }
+
             }
 
             @Override
@@ -112,10 +138,8 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
 
             }
         });
-*/
-
-
     }
+
 
     @Override
     public void onPause() {
@@ -131,6 +155,13 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
         mGoogleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+        mGoogleMap.getUiSettings().setCompassEnabled(true);
+
+        mGoogleMap.getUiSettings().setTiltGesturesEnabled(true);
+        mGoogleMap.getUiSettings().setRotateGesturesEnabled(true);
+        mGoogleMap.getUiSettings().setScrollGesturesEnabled(true);
+        mGoogleMap.getUiSettings().setZoomControlsEnabled(true);
+        mGoogleMap.getUiSettings().setZoomGesturesEnabled(true);
 
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(60000); // one minute interval
@@ -143,7 +174,6 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
                     == PackageManager.PERMISSION_GRANTED) {
                 //Location Permission already granted
                 mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-
                 mGoogleMap.setMyLocationEnabled(true);
             } else {
                 //Request Location Permission
@@ -166,85 +196,56 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
                 }
 
                 //Place current location marker
-                final LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                 MarkerOptions markerOptions = new MarkerOptions();
                 markerOptions.position(latLng);
-                markerOptions.title("Your Position");
-                markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_white));
+                markerOptions.title("You are here");
+                //  markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.met_ic_clear));
                 mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
 
                 //move map camera
-                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 19));
+                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
 
 
-                getroute(latLng);
-                Toast.makeText(BusLiveLocationTracker.this, "Hey getrouet() is running" +
-                        "", Toast.LENGTH_SHORT).show();
                 //store data in firebase
                 //generating USER ID
                 String UUID = currentUser.getUid();
 
-                //Driver driver = new Driver();
+                //User user = new User();
 
 
-                //pushing child driver to driversNode
+                //pushing child driver to usersNode
 
-                driversNode.child(UUID).child("latitude").setValue(latLng.latitude);
+                usersNode.child(UUID).child("latitude").setValue(latLng.latitude);
 
-                driversNode.child(UUID).child("longitude").setValue(latLng.longitude);
+                usersNode.child(UUID).child("longitude").setValue(latLng.longitude);
 
             }
         }
     };
 
-    private void getroute(LatLng latLng) {
-        Routing routing = new Routing.Builder()
-                .travelMode(Routing.TravelMode.DRIVING)
-                .withListener(this)
-                .waypoints(latLng, destination)
-                .alternativeRoutes(false)
-
-                .build();
-
-        routing.execute();
-
-        // Start marker
-        MarkerOptions options = new MarkerOptions();
-        options.position(latLng);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_white));
-        mGoogleMap.addMarker(options);
-
-        // End marker
-        options = new MarkerOptions();
-        options.position(destination);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_white));
-        mGoogleMap.addMarker(options);
-
-
-    }
-
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     private void checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(BusLiveLocationTracker.this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(Tracking.this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(BusLiveLocationTracker.this,
+            if (ActivityCompat.shouldShowRequestPermissionRationale(Tracking.this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
 
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
-                new AlertDialog.Builder(BusLiveLocationTracker.this)
-                        .setTitle("Location Permission Needed")
+                new AlertDialog.Builder(Tracking.this)
+                        .setTitle(R.string.locationpermstitle)
                         .setMessage("This app needs the Location permission, please accept to use location functionality")
                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 //Prompt the user once explanation has been shown
-                                ActivityCompat.requestPermissions(BusLiveLocationTracker.this,
+                                ActivityCompat.requestPermissions(Tracking.this,
                                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                                         MY_PERMISSIONS_REQUEST_LOCATION);
                             }
@@ -255,7 +256,7 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
 
             } else {
                 // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(BusLiveLocationTracker.this,
+                ActivityCompat.requestPermissions(Tracking.this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
             }
@@ -264,7 +265,7 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
@@ -273,7 +274,7 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
 
                     // permission was granted, yay! Do the
                     // location-related task you need to do.
-                    if (ContextCompat.checkSelfPermission(BusLiveLocationTracker.this,
+                    if (ContextCompat.checkSelfPermission(Tracking.this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
 
@@ -285,7 +286,7 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
 
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
-                    Toast.makeText(BusLiveLocationTracker.this, "permission denied", Toast.LENGTH_LONG).show();
+                    Toast.makeText(Tracking.this, "permission denied", Toast.LENGTH_LONG).show();
                 }
                 return;
             }
@@ -311,68 +312,4 @@ public class BusLiveLocationTracker extends FragmentActivity implements RoutingL
 
     }
 
-
-    @Override
-    public void onRoutingFailure(RouteException e) {
-        if (e != null) {
-            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        } else {
-            Toast.makeText(this, "Something went wrong, Try again", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onRoutingStart() {
-
-    }
-
-    @Override
-    public void onRoutingSuccess(ArrayList <Route> route, int i) {
-        LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-        CameraUpdate center = CameraUpdateFactory.newLatLng(latLng);
-        CameraUpdate zoom = CameraUpdateFactory.zoomTo(16);
-
-        mGoogleMap.moveCamera(center);
-
-        polylines = new ArrayList <>();
-        if (polylines.size() > 0) {
-            for (Polyline poly : polylines) {
-                poly.remove();
-            }
-        }
-
-
-        //add route(s) to the map.
-        for (int h = 0; h < route.size(); h++) {
-
-            //In case of more than 5 alternative routes
-            int colorIndex = h % COLORS.length;
-
-            PolylineOptions polyOptions = new PolylineOptions();
-            polyOptions.color(getResources().getColor(COLORS[colorIndex]));
-            polyOptions.width(10 + h * 3);
-            polyOptions.addAll(route.get(h).getPoints());
-            Polyline polyline = mGoogleMap.addPolyline(polyOptions);
-            polylines.add(polyline);
-
-            Toast.makeText(getApplicationContext(), "Route " + (h + 1) + ": distance - " + route.get(h).getDistanceValue() + ": duration - " + route.get(h).getDurationValue(), Toast.LENGTH_SHORT).show();
-        }
-
-     /*   // Start marker
-        MarkerOptions options = new MarkerOptions();
-        options.position(latLng);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_white));
-        mGoogleMap.addMarker(options);
-
-        // End marker
-        options = new MarkerOptions();
-        options.position(destination);
-        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_bus_white));
-        mGoogleMap.addMarker(options);*/
-    }
-
-    @Override
-    public void onRoutingCancelled() {
-
-    }
 }

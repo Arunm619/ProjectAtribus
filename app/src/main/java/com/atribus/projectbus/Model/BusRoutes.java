@@ -49,6 +49,8 @@ public class BusRoutes {
 
 
         startingtimes.put("11", "6.00 am");
+        startingtimes.put("12", "6.04 am");
+
         startingtimes.put("13", "6.10 am");
 
         licenses.put("TN-09 AL 4444", "11");
